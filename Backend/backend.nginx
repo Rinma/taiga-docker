@@ -1,0 +1,21 @@
+server {
+  listen 80;
+  server_name localhost;
+
+  large_client_header_buffers 4 32k;
+  client_max_body_size 50M;
+  charset utf-8;
+
+  access_log /home/taiga/logs/files.access.log;
+  error_log /home/taiga/logs/files.error.log;
+
+  # Static files
+  location /static {
+    alias /home/taiga/taiga-back/static;
+  }
+
+  # Media files
+  location /media {
+    alias /home/taiga/taiga-back/media;
+  }
+}

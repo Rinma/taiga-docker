@@ -1,0 +1,105 @@
+version: '3.4'
+
+services:
+  backend:
+    build:
+      context: Backend/
+      dockerfile: Dockerfile
+    labels:
+      traefik.docker.network: "proxy_net"
+      traefik.backend.healthcheck.port: "8000"
+      traefik.api.port: "8000"
+      traefik.api.frontend.rule: "Host:localhost;PathPrefix:/api"
+      traefik.static.frontend.rule: "Host: localhost;PathPrefix:/static"
+      traefik.static.port: "80"
+      traefik.media.frontend.rule: "Host: localhost;PathPrefix:/media"
+      traefik.media.port: "80"
+    environment:
+      TAIGA_DB_NAME: "taiga"
+      TAIGA_DB_HOST: "postgres"
+      TAIGA_DB_USER: "taiga"
+      TAIGA_DB_PASSWORD: "Password"
+      TAIGA_HOSTNAME: "localhost"
+      TAIGA_HTTP_SCHEME: "http"
+    volumes:
+      - "./volumes/backend/media:/home/taiga/taiga-back/media"
+      - "./volumes/backend/static:/home/taiga/taiga-back/static"
+    depends_on:
+      - postgres
+      - rabbit
+      - redis
+    networks:
+      - proxy_net
+
+  frontend:
+    build:
+      context: Frontend/
+      dockerfile: Dockerfile
+    labels:
+      traefik.docker.network: "proxy_net"
+      traefik.backend.healthcheck.port: "8081"
+      traefik.port: "8081"
+      traefik.frontend.rule: "Host:localhost"
+    depends_on:
+      - backend
+    networks:
+      - proxy_net
+
+  events:
+    build:
+      context: Events/
+      dockerfile: Dockerfile
+    labels:
+      traefik.docker.network: "proxy_net"
+      traefik.backend.healthcheck.port: "8888"
+      traefik.events.frontend.rule: "Host: localhost;PathPrefix:/events"
+      traefik.events.frontend.entryPoints: "http"
+      traefik.events.port: "8888"
+    depends_on:
+      - rabbit
+      - redis
+      - backend
+    networks:
+      - proxy_net
+
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: taiga
+      POSTGRES_PASSWORD: Password
+      POSTGRES_DB: taiga
+    networks:
+      - proxy_net
+
+  rabbit:
+    image: rabbitmq:latest
+    environment:
+      RABBITMQ_DEFAULT_USER: taiga
+      RABBITMQ_DEFAULT_PASS: taiga
+      RABBITMQ_DEFAULT_VHOST: taiga
+    networks:
+      - proxy_net
+
+  redis:
+    image: redis:latest
+    networks:
+      - proxy_net
+
+  proxy:
+    image: traefik
+    labels:
+      traefik.port: 8080
+      traefik.frontend.auth.basic: "rinma:$$apr1$$kpga3t7c$$OBMjTzkppn7gCLOo1bwEG."
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - proxy_net
+    command: --api --docker --docker.domain=localhost
+
+networks:
+  proxy_net:
+    driver: bridge
