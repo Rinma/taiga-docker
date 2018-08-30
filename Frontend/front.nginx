@@ -1,6 +1,6 @@
 server {
-    listen 8081;
-    server_name _;
+    listen 8070;
+    server_name TAIGA_HOSTNAME;
 
     large_client_header_buffers 4 32k;
     client_max_body_size 50M;

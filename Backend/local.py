@@ -3,21 +3,20 @@ from .common import *
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('TAIGA_DB_NAME'),
-        'HOST': os.getenv('TAIGA_DB_HOST'),
-        'USER': os.getenv('TAIGA_DB_USER'),
-        'PASSWORD': os.getenv('TAIGA_DB_PASSWORD')
+        'NAME': 'POSTGRES_DB',
+        'HOST': 'POSTGRES_HOST',
+        'USER': 'POSTGRES_USER',
+        'PASSWORD': 'POSTGRES_PASSWORD'
     }
 }
 
-TAIGA_HOSTNAME = os.getenv('TAIGA_HOSTNAME')
+MEDIA_URL = 'http://TAIGA_HOSTNAME/media/'
+STATIC_URL = 'http://TAIGA_HOSTNAME/static/'
 
-MEDIA_URL = 'http://' + TAIGA_HOSTNAME + '/media/'
-STATIC_URL = "http://' + TAIGA_HOSTNAME * '/static/"
 SITES["front"]["scheme"] = "http"
-SITES["front"]["domain"] = TAIGA_HOSTNAME
+SITES["front"]["domain"] = 'TAIGA_HOSTNAME'
 
-SECRET_KEY = "theveryultratopsecretkey"
+SECRET_KEY = 'TAIGA_SECRET'
 
 DEBUG = True
 PUBLIC_REGISTER_ENABLED = True
@@ -28,7 +27,7 @@ SERVER_EMAIL = DEFAULT_FROM_EMAIL
 #CELERY_ENABLED = True
 
 EVENTS_PUSH_BACKEND = "taiga.events.backends.rabbitmq.EventsPushBackend"
-EVENTS_PUSH_BACKEND_OPTIONS = {"url": "amqp://taiga:taiga@rabbit:5672/taiga"}
+EVENTS_PUSH_BACKEND_OPTIONS = {"url": "amqp://RABBITMQ_DEFAULT_USER:RABBITMQ_DEFAULT_PASS@RABBITMQ_HOST:5672/RABBITMQ_DEFAULT_VHOST"}
 
 # Uncomment and populate with proper connection parameters
 # for enable email sending. EMAIL_HOST_USER should end by @domain.tld

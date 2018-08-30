@@ -20,4 +20,7 @@ ADD front.nginx /etc/nginx/conf.d/front.conf
 WORKDIR /home/taiga/taiga-front-dist
 RUN chown -R taiga:taiga /home/taiga
 
-CMD nginx -g 'daemon off;'
+ADD entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+CMD /entrypoint.sh

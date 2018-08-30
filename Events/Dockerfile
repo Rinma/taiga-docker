@@ -16,5 +16,8 @@ ADD config.json /home/taiga/taiga-events/config.json
 WORKDIR /home/taiga/taiga-events
 RUN chown -R taiga:taiga /home/taiga
 
+ADD entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 USER taiga
-CMD coffee /home/taiga/taiga-events/index.coffee
+CMD /entrypoint.sh
