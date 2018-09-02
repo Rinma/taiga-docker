@@ -1,68 +1,60 @@
 version: '3.4'
 
 services:
-  backend:
-    build:
-      context: Backend/
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    labels:
-      traefik.docker.network: "proxy_net"
-      traefik.backend.healthcheck.port: "8000"
-
-      traefik.api.port: "8000"
-      traefik.api.frontend.rule: "Host:127.0.0.1;PathPrefix:/api"
-      traefik.api.frontend.passHostHeader: true
-      traefik.api.frontend.entryPoints: "http"
-
-      traefik.admin.port: "8000"
-      traefik.admin.frontend.rule: "Host:127.0.0.1;PathPrefix:/admin"
-      traefik.admin.frontend.entryPoints: "http"
-
-      traefik.static.frontend.rule: "Host: 127.0.0.1;PathPrefix:/static"
-      traefik.static.port: "8081"
-      traefik.static.frontend.entryPoints: "http"
-
-      traefik.media.frontend.rule: "Host: 127.0.0.1;PathPrefix:/media"
-      traefik.media.port: "8081"
-      traefik.media.frontend.entryPoints: "http"
-    env_file:
-      - .env
-    volumes:
-      - backend_media:/home/taiga/taiga-back/media
-      - backend_static:/home/taiga/taiga-back/static
-    depends_on:
-      - postgres
-      - rabbit
-      - redis
-    networks:
-      taiga_net:
-        aliases:
-          - localhost
-          - backend
-      proxy_net:
-
   frontend:
     build:
       context: Frontend/
       dockerfile: Dockerfile
     restart: unless-stopped
     labels:
-      traefik.docker.network: "proxy_net"
-      traefik.backend.healthcheck.port: "8070"
-      traefik.port: "8070"
-      traefik.frontend.passHostHeader: true
-      traefik.frontend.rule: "Host:127.0.0.1"
-      traefik.frontend.entryPoints: "http"
+      traefik.docker.network: "traefik_net"
+      traefik.enable: true
+      traefik.taiga_front.port: "8085"
+      traefik.taiga_front.frontend.rule: "Host:${TAIGA_HOSTNAME}"
+      traefik.taiga_front.frontend.protocol: "http"
+      traefik.taiga_front.frontend.entryPoints: "http,https"
+      traefik.taiga_front.backend.healthcheck.port: "8085"
     env_file:
-      - .env
+    - .env
     depends_on:
-      - backend
+    - backend
     networks:
-      taiga_net:
-        aliases:
-          - frontend
-      proxy_net:
+    - taiga_net
+    - traefik_net
+
+  backend:
+    build:
+      context: Backend/
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    labels:
+      traefik.docker.network: "traefik_net"
+      traefik.enable: true
+      traefik.api.port: "8000"
+      traefik.api.frontend.rule: "Host:${TAIGA_HOSTNAME};PathPrefix:/api"
+      traefik.api.frontend.protocol: "http"
+      traefik.admin.port: "8000"
+      traefik.admin.frontend.rule: "Host:${TAIGA_HOSTNAME};PathPrefix:/admin"
+      traefik.admin.frontend.protocol: "http"
+      traefik.static.frontend.rule: "Host:${TAIGA_HOSTNAME};PathPrefix:/static"
+      traefik.static.port: "8081"
+      traefik.static.frontend.protocol: "http"
+      traefik.media.frontend.rule: "Host:${TAIGA_HOSTNAME};PathPrefix:/media"
+      traefik.media.port: "8081"
+      traefik.media.frontend.protocol: "http"
+      traefik.backend.healthcheck.port: "8000"
+    env_file:
+    - .env
+    volumes:
+    - backend_media:/home/taiga/taiga-back/media
+    - backend_static:/home/taiga/taiga-back/static
+    depends_on:
+    - postgres
+    - rabbit
+    - redis
+    networks:
+    - taiga_net
+    - traefik_net
 
   events:
     build:
@@ -70,50 +62,56 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     labels:
-      traefik.docker.network: "proxy_net"
-      traefik.backend.healthcheck.port: "8888"
-      traefik.events.frontend.rule: "Host: 127.0.0.1;PathPrefix:/events"
-      traefik.events.frontend.entryPoints: "http"
-      traefik.events.frontend.passHostHeader: true
+      traefik.docker.network: "traefik_net"
+      traefik.enable: true
+      traefik.events.frontend.rule: "Host:${TAIGA_HOSTNAME};PathPrefix:/events"
       traefik.events.port: "8888"
+      traefik.events.frontend.protocol: "http"
+      traefik.events.frontend.passHostHeader: true
+      traefik.events.backend.healthcheck.port: "8888"
     env_file:
-      - .env
+    - .env
     depends_on:
-      - rabbit
-      - redis
-      - backend
+    - rabbit
+    - redis
+    - backend
     networks:
-      taiga_net:
-        aliases:
-          - events
-      proxy_net:
+    - taiga_net
+    - traefik_net
 
   postgres:
     image: postgres:latest
     restart: unless-stopped
+    labels:
+      traefik.enable: false
     env_file:
-      - .env
+    - .env
+    volumes:
+    - taiga_database:/var/lib/postgresql/data
     networks:
-      - taiga_net
-      - proxy_net
+    - taiga_net
 
   rabbit:
     image: rabbitmq:latest
     restart: unless-stopped
+    labels:
+      traefik.enable: false
     env_file:
-      - .env
+    - .env
     networks:
-      - taiga_net
-      - proxy_net
+    - taiga_net
 
   redis:
     image: redis:latest
     restart: unless-stopped
+    labels:
+      traefik.enable: false
     env_file:
-      - .env
+    - .env
+    volumes:
+    - taiga_redis:/data
     networks:
-      - taiga_net
-      - proxy_net
+    - taiga_net
 
   proxy:
     image: traefik
@@ -121,21 +119,24 @@ services:
     labels:
       traefik.port: 8080
     ports:
-      - 80:80
-      - 443:443
-      - 8080:8080
+    - 80:80
+    - 443:443
+    - 8080:8080
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+    - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - proxy_net
-    command: --api --docker --docker.domain=localhost
+    - traefik_net
+    command: --api --docker
+
 
 volumes:
   backend_media:
   backend_static:
+  taiga_database:
+  taiga_redis:
 
 networks:
   taiga_net:
     driver: bridge
-  proxy_net:
+  traefik_net:
     driver: bridge

@@ -18,8 +18,8 @@ SITES["front"]["domain"] = 'TAIGA_HOSTNAME'
 
 SECRET_KEY = 'TAIGA_SECRET'
 
-DEBUG = True
-PUBLIC_REGISTER_ENABLED = True
+DEBUG = False
+PUBLIC_REGISTER_ENABLED = TAIGA_ENABLE_REGISTRATION
 
 DEFAULT_FROM_EMAIL = "no-reply@example.com"
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
@@ -31,12 +31,12 @@ EVENTS_PUSH_BACKEND_OPTIONS = {"url": "amqp://RABBITMQ_DEFAULT_USER:RABBITMQ_DEF
 
 # Uncomment and populate with proper connection parameters
 # for enable email sending. EMAIL_HOST_USER should end by @domain.tld
-#EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-#EMAIL_USE_TLS = False
-#EMAIL_HOST = "localhost"
-#EMAIL_HOST_USER = ""
-#EMAIL_HOST_PASSWORD = ""
-#EMAIL_PORT = 25
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_USE_TLS = True
+EMAIL_HOST = "smtp.1und1.de"
+EMAIL_HOST_USER = "server@over-world.org"
+EMAIL_HOST_PASSWORD = "N510y5690df3Ept4OWtK"
+EMAIL_PORT = 587
 
 # Uncomment and populate with proper connection parameters
 # for enable github login/singin.

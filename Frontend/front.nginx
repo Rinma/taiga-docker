@@ -1,13 +1,13 @@
 server {
-    listen 8070;
-    server_name TAIGA_HOSTNAME;
+    listen 8085;
+    server_name _;
 
     large_client_header_buffers 4 32k;
     client_max_body_size 50M;
     charset utf-8;
 
-    access_log /home/taiga/logs/nginx.access.log;
-    error_log /home/taiga/logs/nginx.error.log;
+    access_log /dev/stdout;
+    error_log /dev/stdout;
 
     # Frontend
     location / {
